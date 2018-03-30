@@ -1,80 +1,39 @@
-#! /usr/bin/python3
-
 import socket
-class _Getch:
-    """Gets a single character from standard input.  Does not echo to the
-screen."""
-    def __init__(self):
-        try:
-            self.impl = _GetchWindows()
-        except ImportError:
-            self.impl = _GetchUnix()
+import pickle
+import pygame
+import time
 
-    def __call__(self): return self.impl()
+pygame.init()
+j = pygame.joystick.Joystick(0)
+j.init()
+print('Initialized Joystick : %s' % j.get_name())
 
-
-class _GetchUnix:
-    def __init__(self):
-        import tty, sys
-
-    def __call__(self):
-        import sys, tty, termios
-        fd = sys.stdin.fileno()
-        old_settings = termios.tcgetattr(fd)
-        try:
-            tty.setraw(sys.stdin.fileno())
-            ch = sys.stdin.read(1)
-        finally:
-            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-        return ch
-
-
-class _GetchWindows:
-    def __init__(self):
-        import msvcrt
-
-    def __call__(self):
-        import msvcrt
-        return msvcrt.getch()
-
-
-getch = _Getch()
+host = "localhost"
+port = 12347                   # The same port as used by the server
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-host ="192.168.1.8"
-port =8000
-s.connect((host,port))
+s.connect((host, port))
 
-while 1:
 
-    r = getch()
-    #ts(s)
-    if r == 'w':
-        s.send('w'.encode()) 
-        data = ''
-        data = s.recv(1024).decode()
-        print (data)
-    elif r == 's':
-        s.send('s'.encode()) 
-        data = ''
-        data = s.recv(1024).decode()
-        print (data)
+def get():
+    out = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    it = 0  # iterator
+    pygame.event.pump()
+    #Read input jo
+    for i in range(0, j.get_numaxes()):
+        out[it] = int(round(j.get_axis(i) * 100))
+        it += 1
+    #Read input from buttons
+    for i in range(0, j.get_numbuttons()):
+        out[it] = j.get_button(i)
+        it += 1
+    return out
 
-    elif r == 'a':
-        s.send('a'.encode()) 
-        data = ''
-        data = s.recv(1024).decode()
-        print (data)
 
-    elif r == 'd':
-        s.send('d'.encode()) 
-        data = ''
-        data = s.recv(1024).decode()
-        print (data)
-    
-    s.send('0'.encode())
-   #else:
-    #    s.send('0'.encode()) 
-     #   data = ''
-     #   data = s.recv(1024).decode()
-      #  print (data)
-s.close ()
+
+while True:
+    print('Sending',get())
+    s.sendall(pickle.dumps(get()))
+    data = s.recv(1024)
+    print('Received', repr(pickle.loads(data)))
+    time.sleep(0.1)
+
