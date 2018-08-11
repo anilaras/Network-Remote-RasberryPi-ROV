@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" type="text/css" href="./src/main.css">
+    <title>uMarine View Page</title>
+    <script>
+    var timer, delay = 1000;
+    timer = setInterval(loadXMLDoc, delay);
+
+    function loadXMLDoc() {
+        var xmlhttp = new XMLHttpRequest();
+        xmlhttp.onreadystatechange = function () {
+            if (xmlhttp.readyState == XMLHttpRequest.DONE) { // XMLHttpRequest.DONE == 4
+                if (xmlhttp.status == 200) {
+                    var jsonData = JSON.parse(xmlhttp.responseText);
+                    document.getElementById("temp").innerHTML = jsonData.temp;
+                    document.getElementById("adcdata").innerHTML = jsonData.adcdata;
+                } else if (xmlhttp.status == 400) {
+                    alert('There was an error 400');
+                } else {
+                    //alert('something else other than 200 was returned');
+                }
+            }
+        };
+        xmlhttp.open("POST", "data.php", true);
+        xmlhttp.send();
+    }
+    </script>
+</head>
+
+<body>
+<div class="wrapper">
+    <!--<navi>
+        <div class="menu">
+            <ul>
+            </ul>
+        </div>
+    </navi>-->
+<header class="header">
+<img src="./src/mikromarine_seffaf.png" height="42" width="auto">
+    
+</header>
+    
+<article class="main">
+    <div id="goruntu">
+<img src="http://192.168.1.6:8081/?action=stream "
+width="auto">
+<!--http://192.168.0.63:8090/?action=stream-->
+    </div>
+    </article>
+    <aside class="aside aside-1">
+<div id="Degerler">
+    <h4> Temp data</h4>
+<div class="text" id='temp'> </div>
+    <h4> ADC data </h4>
+    <div class="text" id="adcdata"> </div>
+</div>
+
+    </aside>
+    
+    <!--<aside class="aside aside-2">
+        
+    </aside>-->
+
+    <footer class="footer" style="float:left;">
+<div> &copy; 2018 &#181;Marine Team </div>
+    </footer>
+</div>
+   
+</body>
+
+</html>
