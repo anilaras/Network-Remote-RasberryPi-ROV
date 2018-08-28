@@ -3,15 +3,18 @@ import pickle
 import time
 import sys
 import pigpio
-import os
+import os ,signal
 import glob
-import Adafruit_ADS1x15
-from threading import Thread
-#import ms5837
+import subprocess
+#import Adafruit_ADS1x15
+
 STOP_PULSE = 1500
 SAG_MOTOR = 25
 SOL_MOTOR = 18
 DALIS_MOTOR = 12  # sonra değişecek 19 hangi pin pwm var mı bilmiyorum?
+
+os.system("pigpiod")
+proct = subprocess.Popen(["python3","/home/pi/Desktop/temp.py"])
 
 host = ""        # Symbolic name meaning all available interfaces
 port = 666     # Arbitrary non-privileged port
@@ -29,36 +32,8 @@ if not pi.connected:
        exit()
 
 
-adc = Adafruit_ADS1x15.ADS1115()
+#adc = Adafruit_ADS1x15.ADS1115()
 GAIN = 2/3
-
-os.system('modprobe w1-gpio')
-os.system('modprobe w1-therm')
-
-base_dir = '/sys/bus/w1/devices/'
-device_folder = glob.glob(base_dir + '28*')[0]
-device_file = device_folder + '/w1_slave'
-
-def read_temp():
-    f = open(device_file, 'r')
-    lines = f.readlines()
-    f.close()
-    lines = read_temp_raw()
-    while lines[0].strip()[-3:] != 'YES':
-        time.sleep(0.2)
-        lines = read_temp_raw()
-    equals_pos = lines[1].find('t=')
-    if equals_pos != -1:
-        temp_string = lines[1][equals_pos+2:]
-        temp_c = float(temp_string) / 1000.0
-        return temp_c
-
-def writeTemp():
-    tempfp = open("temp.dat", "w")
-    temp = read_temp()
-    tempfp.write(str(temp))
-    tempfp.close()
-
 
 
 #Dönüş yönü ve İleri hareketi kontrol eden fonksiyon
@@ -109,7 +84,6 @@ def dalisKontrol(deger):
 
 
 def main():
-    tempTh = Thread(target=writeTemp)
     try:
         while True:
             data = conn.recv(1024)
@@ -125,22 +99,22 @@ def main():
             dalisKontrol(dalis)
             print(pickle.loads(data))
             conn.sendall(data)
-            try:
-                tempTh.start()
-            except:
-                print("Sıcaklık dosyaya yazılamadı!")
 
-            try:
-                analogV = adc.read_adc(0, gain=GAIN)
-                analogfp = open("analogData.dat", "w")
-                analogfp.write(str(analogV))
-                analogfp.close()
-            except:
-                print("ADC verisi alınamadı!")
+            #try:
+            #    analogV = adc.read_adc(0, gain=GAIN)
+            #    analogfp = open("analogData.dat", "w")
+            #    analogfp.write(str(analogV))
+            #    analogfp.close()
+            #except:
+            #    print("ADC verisi alınamadı!")
 
-    except KeyboardInterrupt:
+    except:
         print("Program Kapatılıyor...")
+        proct.kill()
         conn.close()
+        os.kill(proct.pid, signal.SIGKILL)
+
+        
 
 if __name__ == '__main__':
     main()
